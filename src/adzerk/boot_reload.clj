@@ -7,7 +7,9 @@
    [boot.file          :as file]
    [boot.util          :refer :all]
    [boot.core          :refer :all]
-   [boot.from.backtick :refer [template]]))
+   [boot.from.backtick :refer [template]])
+  (:import
+   [java.net URI]))
 
 (def ^:private deps '[[http-kit "2.1.18"]])
 
@@ -22,7 +24,7 @@
 
 (defn- changed []
   (->> @watchers (map #(%)) (reduce (partial merge-with set/union))
-    :time (remove consumed-file?) (map (comp relative-path io/file)) set))
+    :time (remove consumed-file?) (map (comp (memfn getPath) (partial file/relative-to (io/file "public")) io/file relative-path io/file)) set))
 
 (defn- start-server [pod {:keys [ip port] :as opts}]
   (let [{:keys [ip port]}
@@ -61,4 +63,3 @@
     (io/make-parents out)
     (write-cljs out (start-server @pod {:ip ip :port port}) on-jsload)
     (with-post-wrap (send-changed! @pod (changed)))))
-
